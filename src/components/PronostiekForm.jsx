@@ -88,4 +88,92 @@ export default function PronostiekForm({ match, settings }) {
   const matchTime = new Date(match.match_datetime);
   const canEdit =
     (settings?.predictions_open ?? true) &&
-    now < m
+    now < matchTime;
+
+  // Save prediction
+  async function onSave(e) {
+    e.preventDefault();
+    if (!user) {
+      alert("Vul eerst je naam in.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('pronostieken')
+      .upsert(
+        {
+          user_id: user.id,
+          match_id: match.id,
+          team1_score: s1 === '' ? null : Number(s1),
+          team2_score: s2 === '' ? null : Number(s2)
+        },
+        { onConflict: ['user_id', 'match_id'] }
+      );
+
+    if (error) {
+      alert("Fout bij opslaan: " + error.message);
+      return;
+    }
+
+    alert("Voorspelling opgeslagen!");
+  }
+
+  return (
+    <div style={{ minWidth: 300 }}>
+      {/* LOGIN */}
+      {!user ? (
+        <form onSubmit={onCreate} className="flex gap-2 items-center">
+          <input
+            name="name"
+            placeholder="Je naam"
+            className="border p-1"
+          />
+          <button className="px-2 py-1 bg-blue-600 text-white rounded">
+            Start
+          </button>
+        </form>
+      ) : (
+        <div>
+          <div className="text-sm mb-2">
+            Ingelogd als <strong>{user.name}</strong>
+          </div>
+
+          {/* EDITING */}
+          {canEdit ? (
+            <form onSubmit={onSave} className="flex gap-2 items-center">
+              <input
+                type="number"
+                min="0"
+                value={s1}
+                onChange={e => setS1(e.target.value)}
+                className="w-16 p-1 border"
+              />
+              <span>-</span>
+              <input
+                type="number"
+                min="0"
+                value={s2}
+                onChange={e => setS2(e.target.value)}
+                className="w-16 p-1 border"
+              />
+              <button className="ml-2 px-2 py-1 bg-green-600 text-white rounded">
+                Opslaan
+              </button>
+            </form>
+          ) : (
+            <div className="text-sm text-red-600">
+              Voorspellingen gesloten.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SHOW SAVED RESULT AFTER CLOSING */}
+      {existing && !canEdit && (
+        <div className="mt-2 text-xs text-gray-600">
+          Je voorspelling: {existing.team1_score ?? '-'} - {existing.team2_score ?? '-'}
+        </div>
+      )}
+    </div>
+  );
+}
