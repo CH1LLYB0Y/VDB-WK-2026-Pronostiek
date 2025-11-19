@@ -4,7 +4,7 @@
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
   ],
   "env": {
-    "VITE_SUPABASE_URL": "@supabase_url",
-    "VITE_SUPABASE_ANON_KEY": "@supabase_anon_key"
+    "VITE_SUPABASE_URL": "https://hoctmqqysrwspfrjhefr.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvY3RtcXF5c3J3c3BmcmpoZWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1MzU5MTQsImV4cCI6MjA3OTExMTkxNH0.e97lEZno9EzhT9vNAsWo3ke5bTdDax0Eos2Z7D6_gwE"
   }
 }
