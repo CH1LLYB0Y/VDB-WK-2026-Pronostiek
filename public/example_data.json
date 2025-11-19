@@ -1,0 +1,18 @@
+{
+  "matches": [
+    {
+      "matchday": 1,
+      "stage": "Group",
+      "team_a": "Belgium",
+      "team_b": "USA",
+      "kickoff": "2026-06-12T18:00:00Z"
+    },
+    {
+      "matchday": 1,
+      "stage": "Group",
+      "team_a": "France",
+      "team_b": "Germany",
+      "kickoff": "2026-06-12T21:00:00Z"
+    }
+  ]
+}

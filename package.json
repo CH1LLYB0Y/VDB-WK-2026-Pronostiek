@@ -1,0 +1,25 @@
+{
+  "name": "wk2026-pronostiek",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@supabase/supabase-js": "^2.42.0",
+    "react-router-dom": "^6.14.1"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "tailwindcss": "^4.0.0",
+    "autoprefixer": "^10.0.0",
+    "postcss": "^8.0.0",
+    "prettier": "^2.8.0"
+  }
+}
