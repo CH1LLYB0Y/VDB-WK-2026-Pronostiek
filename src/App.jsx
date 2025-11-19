@@ -1,62 +1,62 @@
-import React, {useEffect, useState} from 'react'
-import PredictionForm from './components/PredictionForm'
-import Leaderboard from './components/Leaderboard'
-import AdminPanel from './components/AdminPanel'
-import { supabase } from './lib/supabaseClient'
+// App.jsx
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Home from './pages/Home';
+import Admin from './pages/Admin';
 
-export default function App(){
-  const [participant, setParticipant] = useState(null)
+export default function App() {
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
-  useEffect(()=> {
-    const stored = localStorage.getItem('participant')
-    if (stored) setParticipant(JSON.parse(stored))
-  }, [])
+  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD; // Zet dit in Vercel
 
-  async function createParticipant(displayName, groupName){
-    const { data } = await supabase.from('participants').insert([{display_name: displayName, group_name: groupName}]).select().single()
-    setParticipant(data)
-    localStorage.setItem('participant', JSON.stringify(data))
-  }
-
-  if (!participant) {
-    return <Signup onCreate={createParticipant} />
+  function handleLogin(e) {
+    e.preventDefault();
+    if (adminPasswordInput === ADMIN_PASSWORD) {
+      setIsAdminLoggedIn(true);
+    } else {
+      alert('Fout wachtwoord');
+    }
   }
 
   return (
-    <div className="container">
-      <header className="header">
-        <h1 className="text-2xl font-bold">WK2026 Pronostiek</h1>
-        <div>
-          <div className="text-sm">{participant.display_name} ({participant.group_name})</div>
-        </div>
-      </header>
-      <main className="grid md:grid-cols-2 gap-6">
-        <div>
-          <PredictionForm participantId={participant.id} />
-        </div>
-        <div>
-          <Leaderboard />
-          <AdminPanel />
-        </div>
-      </main>
-    </div>
-  )
-}
+    <Router>
+      <Routes>
+        {/* Hoofdpagina voor familie */}
+        <Route path="/" element={<Home />} />
 
-function Signup({onCreate}){
-  const [name,setName] = useState('')
-  const [group,setGroup] = useState('')
-  return (
-    <div className="container">
-      <div className="card max-w-xl mx-auto">
-        <h2 className="text-xl font-semibold mb-3">Welkom — maak je pronostiek</h2>
-        <div className="flex gap-2">
-          <input placeholder="Je naam" value={name} onChange={e=> setName(e.target.value)} className="p-2 border rounded flex-1" />
-          <input placeholder="Groep (bv. Familie)" value={group} onChange={e=> setGroup(e.target.value)} className="p-2 border rounded w-56" />
-          <button onClick={()=> onCreate(name, group)} className="px-3 py-2 bg-blue-600 text-white rounded">Start</button>
-        </div>
-        <p className="text-sm mt-2">Tip: deel de link met je familie nadat je bent aangemeld.</p>
-      </div>
-    </div>
-  )
+        {/* Admin pagina met simpele login */}
+        <Route
+          path="/admin"
+          element={
+            isAdminLoggedIn ? (
+              <Admin />
+            ) : (
+              <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                <h1 className="text-2xl font-bold mb-4">Admin Login</h1>
+                <form onSubmit={handleLogin} className="flex flex-col gap-2 w-full max-w-xs">
+                  <input
+                    type="password"
+                    placeholder="Admin wachtwoord"
+                    value={adminPasswordInput}
+                    onChange={(e) => setAdminPasswordInput(e.target.value)}
+                    className="p-2 border rounded"
+                  />
+                  <button
+                    type="submit"
+                    className="px-2 py-1 bg-blue-600 text-white rounded"
+                  >
+                    Login
+                  </button>
+                </form>
+              </div>
+            )
+          }
+        />
+
+        {/* Redirect naar home als onbekende route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
 }
