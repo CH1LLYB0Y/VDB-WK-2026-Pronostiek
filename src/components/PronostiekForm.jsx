@@ -26,10 +26,10 @@ export default function PronostiekForm({ match, settings }) {
         .select('*')
         .eq('user_id', user.id)
         .eq('match_id', match.id)
-        .maybeSingle();   // <- FIX: catches missing row zonder crash
+        .maybeSingle(); // optioneel
 
       if (error) {
-        console.warn("Error loading prediction:", error);
+        console.warn("Fout bij laden voorspelling:", error.message);
         return;
       }
 
@@ -48,16 +48,17 @@ export default function PronostiekForm({ match, settings }) {
     const clean = name.trim();
     if (!clean) throw new Error("Vul je naam in.");
 
-    // Try to find
+    // Probeer te vinden
     const { data: found, error: findErr } = await supabase
       .from('users')
       .select('*')
       .eq('name', clean)
       .maybeSingle();
 
+    if (findErr) throw findErr;
     if (found) return found;
 
-    // Create new user
+    // Maak nieuwe user
     const { data: created, error: insertErr } = await supabase
       .from('users')
       .insert([{ name: clean }])
@@ -65,15 +66,13 @@ export default function PronostiekForm({ match, settings }) {
       .single();
 
     if (insertErr) throw insertErr;
-
     return created;
   }
 
-  // Create or load user
+  // Login / create user
   async function onCreate(e) {
     e.preventDefault();
     const name = e.target.elements.name?.value || '';
-
     try {
       const u = await ensureUser(name);
       localStorage.setItem('wk_user', JSON.stringify(u));
@@ -86,9 +85,7 @@ export default function PronostiekForm({ match, settings }) {
 
   const now = new Date();
   const matchTime = new Date(match.match_datetime);
-  const canEdit =
-    (settings?.predictions_open ?? true) &&
-    now < matchTime;
+  const canEdit = (settings?.predictions_open ?? true) && now < matchTime;
 
   // Save prediction
   async function onSave(e) {
@@ -105,7 +102,7 @@ export default function PronostiekForm({ match, settings }) {
           user_id: user.id,
           match_id: match.id,
           team1_score: s1 === '' ? null : Number(s1),
-          team2_score: s2 === '' ? null : Number(s2)
+          team2_score: s2 === '' ? null : Number(s2),
         },
         { onConflict: ['user_id', 'match_id'] }
       );
@@ -120,55 +117,28 @@ export default function PronostiekForm({ match, settings }) {
 
   return (
     <div style={{ minWidth: 300 }}>
-      {/* LOGIN */}
       {!user ? (
         <form onSubmit={onCreate} className="flex gap-2 items-center">
-          <input
-            name="name"
-            placeholder="Je naam"
-            className="border p-1"
-          />
-          <button className="px-2 py-1 bg-blue-600 text-white rounded">
-            Start
-          </button>
+          <input name="name" placeholder="Je naam" className="border p-1" />
+          <button className="px-2 py-1 bg-blue-600 text-white rounded">Start</button>
         </form>
       ) : (
         <div>
-          <div className="text-sm mb-2">
-            Ingelogd als <strong>{user.name}</strong>
-          </div>
+          <div className="text-sm mb-2">Ingelogd als <strong>{user.name}</strong></div>
 
-          {/* EDITING */}
           {canEdit ? (
             <form onSubmit={onSave} className="flex gap-2 items-center">
-              <input
-                type="number"
-                min="0"
-                value={s1}
-                onChange={e => setS1(e.target.value)}
-                className="w-16 p-1 border"
-              />
+              <input type="number" min="0" value={s1} onChange={e => setS1(e.target.value)} className="w-16 p-1 border" />
               <span>-</span>
-              <input
-                type="number"
-                min="0"
-                value={s2}
-                onChange={e => setS2(e.target.value)}
-                className="w-16 p-1 border"
-              />
-              <button className="ml-2 px-2 py-1 bg-green-600 text-white rounded">
-                Opslaan
-              </button>
+              <input type="number" min="0" value={s2} onChange={e => setS2(e.target.value)} className="w-16 p-1 border" />
+              <button className="ml-2 px-2 py-1 bg-green-600 text-white rounded">Opslaan</button>
             </form>
           ) : (
-            <div className="text-sm text-red-600">
-              Voorspellingen gesloten.
-            </div>
+            <div className="text-sm text-red-600">Voorspellingen gesloten.</div>
           )}
         </div>
       )}
 
-      {/* SHOW SAVED RESULT AFTER CLOSING */}
       {existing && !canEdit && (
         <div className="mt-2 text-xs text-gray-600">
           Je voorspelling: {existing.team1_score ?? '-'} - {existing.team2_score ?? '-'}
