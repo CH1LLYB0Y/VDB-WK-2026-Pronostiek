@@ -1,90 +1,54 @@
-// src/pages/Admin.jsx
-import React, { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import Navbar from "../components/Navbar";
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 export default function Admin() {
-  const [matches, setMatches] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [newMatch, setNewMatch] = useState({ team1: "", team2: "", match_datetime: "" });
+  const user = { email: 'silvandengroenendal@hotmail.com', name: 'Sil VDG', id: 1 };
 
-  useEffect(()=> { load(); }, []);
+  const [settings, setSettings] = useState({ predictions_open: true });
+  const [loading, setLoading] = useState(true);
 
-  async function load(){
-    const { data: ms } = await supabase.from("matches").select("*").order("match_datetime", { ascending: true });
-    setMatches(ms || []);
-    const { data: us } = await supabase.from("users").select("*").order("name", { ascending: true });
-    setUsers(us || []);
-  }
+  useEffect(() => {
+    async function loadSettings() {
+      setLoading(true);
+      try {
+        const settingsData = await fetch('/api/settings').then(res => res.json());
+        setSettings(settingsData || { predictions_open: true });
+      } catch (err) {
+        console.error("Fout bij laden:", err);
+      }
+      setLoading(false);
+    }
+    loadSettings();
+  }, []);
 
-  async function createMatch(){
-    const { error } = await supabase.from("matches").insert([newMatch]);
-    if (error) return alert(error.message);
-    setNewMatch({ team1: "", team2: "", match_datetime: "" });
-    load();
-  }
-
-  async function updateMatch(m){
-    const { error } = await supabase.from("matches").update(m).eq("id", m.id);
-    if (error) return alert(error.message);
-    load();
-  }
-
-  async function deleteMatch(id){
-    if (!confirm("Verwijder match?")) return;
-    const { error } = await supabase.from("matches").delete().eq("id", id);
-    if (error) return alert(error.message);
-    load();
-  }
-
-  async function recomputeScores(){
-    const { error } = await supabase.rpc("update_scores");
-    if (error) return alert(error.message);
-    alert("Scores geüpdatet");
-  }
+  if (loading) return <div className="p-4">Laden…</div>;
 
   return (
-    <div>
-      <Navbar />
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Admin — Beheer wedstrijden</h1>
+    <div className="container p-4">
+      <header className="mb-4">
+        <h1 className="text-2xl font-bold">Admin — WK 2026</h1>
+        <p className="text-sm text-gray-600">
+          Ingelogd als <strong>{user.name}</strong> ({user.email})
+        </p>
+      </header>
 
-        <div className="mb-4 p-3 border rounded">
-          <h2 className="font-semibold">Nieuwe wedstrijd toevoegen</h2>
-          <div className="flex gap-2 mt-2">
-            <input className="border p-1" placeholder="Team 1" value={newMatch.team1} onChange={e=>setNewMatch({...newMatch, team1: e.target.value})} />
-            <input className="border p-1" placeholder="Team 2" value={newMatch.team2} onChange={e=>setNewMatch({...newMatch, team2: e.target.value})} />
-            <input type="datetime-local" className="border p-1" value={newMatch.match_datetime} onChange={e=>setNewMatch({...newMatch, match_datetime: e.target.value})}/>
-            <button className="bg-green-600 text-white px-3 py-1 rounded" onClick={createMatch}>Maak</button>
-          </div>
+      <main>
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Voorspellingen open</label>
+          <input
+            type="checkbox"
+            checked={settings.predictions_open}
+            onChange={e => setSettings({ ...settings, predictions_open: e.target.checked })}
+          />
         </div>
 
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2">Matches</h2>
-          <div className="space-y-2">
-            {matches.map(m => (
-              <div key={m.id} className="p-2 border rounded flex items-center gap-2">
-                <div className="w-64">{m.team1} vs {m.team2} <div className="text-xs text-gray-500">{new Date(m.match_datetime).toLocaleString()}</div></div>
-                <input className="w-16 border p-1" defaultValue={m.score_a ?? ""} onChange={e=> m.score_a = e.target.value} />
-                <input className="w-16 border p-1" defaultValue={m.score_b ?? ""} onChange={e=> m.score_b = e.target.value} />
-                <button className="px-2 py-1 bg-blue-600 text-white rounded" onClick={()=> updateMatch(m)}>Update</button>
-                <button className="px-2 py-1 bg-red-600 text-white rounded" onClick={()=> deleteMatch(m.id)}>Delete</button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2">Gebruikers</h2>
-          <ul className="list-disc pl-5">
-            {users.map(u => <li key={u.id}>{u.name} — {u.id}</li>)}
-          </ul>
-        </div>
-
-        <div>
-          <button className="bg-purple-600 text-white px-3 py-1 rounded" onClick={recomputeScores}>Recompute scores</button>
-        </div>
-      </div>
+        <button
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+          onClick={() => alert("Instellingen opgeslagen (hardcoded voor nu)")}
+        >
+          Opslaan
+        </button>
+      </main>
     </div>
   );
 }
