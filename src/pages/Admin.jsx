@@ -1,110 +1,90 @@
+// src/pages/Admin.jsx
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import Navbar from "../components/Navbar";
 
 export default function Admin() {
+  const [matches, setMatches] = useState([]);
   const [users, setUsers] = useState([]);
-  const [predictions, setPredictions] = useState([]);
-  const [settings, setSettings] = useState(null);
+  const [newMatch, setNewMatch] = useState({ team1: "", team2: "", match_datetime: "" });
 
-  useEffect(() => {
-    loadAll();
-  }, []);
+  useEffect(()=> { load(); }, []);
 
-  async function loadAll() {
-    // load users
-    const { data: u } = await supabase.from("users").select("*").order("id", { ascending: true });
-    setUsers(u || []);
-
-    // load predictions
-    const { data: p } = await supabase
-      .from("pronostieken")
-      .select("*, users(name), matches(team1, team2)")
-      .order("match_id", { ascending: true });
-    setPredictions(p || []);
-
-    // load settings
-    const { data: s } = await supabase.from("settings").select("*").limit(1).maybeSingle();
-    setSettings(s || { predictions_open: true });
+  async function load(){
+    const { data: ms } = await supabase.from("matches").select("*").order("match_datetime", { ascending: true });
+    setMatches(ms || []);
+    const { data: us } = await supabase.from("users").select("*").order("name", { ascending: true });
+    setUsers(us || []);
   }
 
-  async function togglePredictions() {
-    const newVal = !settings.predictions_open;
+  async function createMatch(){
+    const { error } = await supabase.from("matches").insert([newMatch]);
+    if (error) return alert(error.message);
+    setNewMatch({ team1: "", team2: "", match_datetime: "" });
+    load();
+  }
 
-    await supabase
-      .from("settings")
-      .update({ predictions_open: newVal })
-      .eq("id", settings.id);
+  async function updateMatch(m){
+    const { error } = await supabase.from("matches").update(m).eq("id", m.id);
+    if (error) return alert(error.message);
+    load();
+  }
 
-    setSettings({ ...settings, predictions_open: newVal });
+  async function deleteMatch(id){
+    if (!confirm("Verwijder match?")) return;
+    const { error } = await supabase.from("matches").delete().eq("id", id);
+    if (error) return alert(error.message);
+    load();
+  }
+
+  async function recomputeScores(){
+    const { error } = await supabase.rpc("update_scores");
+    if (error) return alert(error.message);
+    alert("Scores geüpdatet");
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Admin Paneel</h1>
+    <div>
+      <Navbar />
+      <div className="container mx-auto p-4">
+        <h1 className="text-2xl font-bold mb-4">Admin — Beheer wedstrijden</h1>
 
-      {/* SETTINGS */}
-      <section className="mb-8 p-4 border rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-3">Instellingen</h2>
-
-        {settings && (
-          <div className="flex items-center gap-4">
-            <div>
-              Voorspellingen staan:{" "}
-              <strong className={settings.predictions_open ? "text-green-600" : "text-red-600"}>
-                {settings.predictions_open ? "Open" : "Gesloten"}
-              </strong>
-            </div>
-
-            <button
-              onClick={togglePredictions}
-              className="px-3 py-1 bg-blue-600 text-white rounded"
-            >
-              Toggle
-            </button>
+        <div className="mb-4 p-3 border rounded">
+          <h2 className="font-semibold">Nieuwe wedstrijd toevoegen</h2>
+          <div className="flex gap-2 mt-2">
+            <input className="border p-1" placeholder="Team 1" value={newMatch.team1} onChange={e=>setNewMatch({...newMatch, team1: e.target.value})} />
+            <input className="border p-1" placeholder="Team 2" value={newMatch.team2} onChange={e=>setNewMatch({...newMatch, team2: e.target.value})} />
+            <input type="datetime-local" className="border p-1" value={newMatch.match_datetime} onChange={e=>setNewMatch({...newMatch, match_datetime: e.target.value})}/>
+            <button className="bg-green-600 text-white px-3 py-1 rounded" onClick={createMatch}>Maak</button>
           </div>
-        )}
-      </section>
+        </div>
 
-      {/* USERS */}
-      <section className="mb-8 p-4 border rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-3">Gebruikers</h2>
-
-        <ul className="list-disc pl-5">
-          {users.map((u) => (
-            <li key={u.id}>
-              {u.name} (ID: {u.id})
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* PRONOSTIEKEN */}
-      <section className="p-4 border rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-3">Alle Pronostieken</h2>
-
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-2">Gebruiker</th>
-              <th className="border p-2">Wedstrijd</th>
-              <th className="border p-2">Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {predictions.map((p) => (
-              <tr key={`${p.user_id}-${p.match_id}`}>
-                <td className="border p-2">{p.users?.name}</td>
-                <td className="border p-2">
-                  {p.matches?.team1} vs {p.matches?.team2}
-                </td>
-                <td className="border p-2">
-                  {p.team1_score ?? "-"} - {p.team2_score ?? "-"}
-                </td>
-              </tr>
+        <div className="mb-6">
+          <h2 className="font-semibold mb-2">Matches</h2>
+          <div className="space-y-2">
+            {matches.map(m => (
+              <div key={m.id} className="p-2 border rounded flex items-center gap-2">
+                <div className="w-64">{m.team1} vs {m.team2} <div className="text-xs text-gray-500">{new Date(m.match_datetime).toLocaleString()}</div></div>
+                <input className="w-16 border p-1" defaultValue={m.score_a ?? ""} onChange={e=> m.score_a = e.target.value} />
+                <input className="w-16 border p-1" defaultValue={m.score_b ?? ""} onChange={e=> m.score_b = e.target.value} />
+                <button className="px-2 py-1 bg-blue-600 text-white rounded" onClick={()=> updateMatch(m)}>Update</button>
+                <button className="px-2 py-1 bg-red-600 text-white rounded" onClick={()=> deleteMatch(m.id)}>Delete</button>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </section>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="font-semibold mb-2">Gebruikers</h2>
+          <ul className="list-disc pl-5">
+            {users.map(u => <li key={u.id}>{u.name} — {u.id}</li>)}
+          </ul>
+        </div>
+
+        <div>
+          <button className="bg-purple-600 text-white px-3 py-1 rounded" onClick={recomputeScores}>Recompute scores</button>
+        </div>
+      </div>
     </div>
   );
 }
