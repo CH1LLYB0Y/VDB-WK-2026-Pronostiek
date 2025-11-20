@@ -1,65 +1,110 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import Navbar from "../components/Navbar";
 
 export default function Admin() {
+  const [users, setUsers] = useState([]);
+  const [predictions, setPredictions] = useState([]);
   const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    load();
+    loadAll();
   }, []);
 
-  async function load() {
-    setLoading(true);
+  async function loadAll() {
+    // load users
+    const { data: u } = await supabase.from("users").select("*").order("id", { ascending: true });
+    setUsers(u || []);
 
-    const { data: s } = await supabase
-      .from("settings")
-      .select("*")
-      .limit(1)
-      .maybeSingle();
+    // load predictions
+    const { data: p } = await supabase
+      .from("pronostieken")
+      .select("*, users(name), matches(team1, team2)")
+      .order("match_id", { ascending: true });
+    setPredictions(p || []);
 
-    setSettings(s);
-    setLoading(false);
+    // load settings
+    const { data: s } = await supabase.from("settings").select("*").limit(1).maybeSingle();
+    setSettings(s || { predictions_open: true });
   }
 
   async function togglePredictions() {
-    const newState = !settings.predictions_open;
+    const newVal = !settings.predictions_open;
 
-    await supabase.from("settings").update({
-      predictions_open: newState,
-    }).eq("id", settings.id);
+    await supabase
+      .from("settings")
+      .update({ predictions_open: newVal })
+      .eq("id", settings.id);
 
-    setSettings({ ...settings, predictions_open: newState });
+    setSettings({ ...settings, predictions_open: newVal });
   }
 
-  if (loading) return <div>Laden…</div>;
-
   return (
-    <div>
-      <Navbar />
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-6">Admin Paneel</h1>
 
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+      {/* SETTINGS */}
+      <section className="mb-8 p-4 border rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-3">Instellingen</h2>
 
-        <div className="p-4 border rounded shadow">
-          <h2 className="text-xl font-semibold mb-3">Voorspellingen-instellingen</h2>
+        {settings && (
+          <div className="flex items-center gap-4">
+            <div>
+              Voorspellingen staan:{" "}
+              <strong className={settings.predictions_open ? "text-green-600" : "text-red-600"}>
+                {settings.predictions_open ? "Open" : "Gesloten"}
+              </strong>
+            </div>
 
-          <p className="mb-4">
-            Momenteel:{" "}
-            <span className="font-bold">
-              {settings.predictions_open ? "OPEN" : "GESLOTEN"}
-            </span>
-          </p>
+            <button
+              onClick={togglePredictions}
+              className="px-3 py-1 bg-blue-600 text-white rounded"
+            >
+              Toggle
+            </button>
+          </div>
+        )}
+      </section>
 
-          <button
-            onClick={togglePredictions}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Zet voorspellingen {settings.predictions_open ? "DICHT" : "OPEN"}
-          </button>
-        </div>
-      </div>
+      {/* USERS */}
+      <section className="mb-8 p-4 border rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-3">Gebruikers</h2>
+
+        <ul className="list-disc pl-5">
+          {users.map((u) => (
+            <li key={u.id}>
+              {u.name} (ID: {u.id})
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* PRONOSTIEKEN */}
+      <section className="p-4 border rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-3">Alle Pronostieken</h2>
+
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border p-2">Gebruiker</th>
+              <th className="border p-2">Wedstrijd</th>
+              <th className="border p-2">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {predictions.map((p) => (
+              <tr key={`${p.user_id}-${p.match_id}`}>
+                <td className="border p-2">{p.users?.name}</td>
+                <td className="border p-2">
+                  {p.matches?.team1} vs {p.matches?.team2}
+                </td>
+                <td className="border p-2">
+                  {p.team1_score ?? "-"} - {p.team2_score ?? "-"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }
