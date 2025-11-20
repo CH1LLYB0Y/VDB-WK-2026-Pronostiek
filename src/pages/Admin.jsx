@@ -2,156 +2,174 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Admin() {
-  // Hardcoded admin user
-  const user = { email: 'silvandengroenendal@hotmail.com', name: 'Sil VDG', id: 1 };
-
   const [settings, setSettings] = useState({ predictions_open: true });
   const [matches, setMatches] = useState([]);
   const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load all data
+  // Load settings, matches, and predictions
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      try {
-        // Settings
-        const { data: s } = await supabase.from('settings').select('*').limit(1).single().catch(() => ({ data: { predictions_open: true } }));
-        setSettings(s);
 
-        // Matches
-        const { data: ms } = await supabase.from('matches').select('*').order('match_datetime', { ascending: true });
-        setMatches(ms || []);
+      const { data: s } = await supabase.from('settings').select('*').limit(1).single().catch(()=>({ data: null }));
+      if (s) setSettings(s);
 
-        // Predictions
-        const { data: preds } = await supabase.from('pronostieken').select('*');
-        setPredictions(preds || []);
-      } catch (err) {
-        console.error("Fout bij laden:", err);
-      }
+      const { data: ms } = await supabase.from('matches').select('*').order('match_datetime', { ascending: true });
+      if (ms) setMatches(ms);
+
+      const { data: preds } = await supabase.from('pronostieken').select('*');
+      if (preds) setPredictions(preds);
+
       setLoading(false);
     }
+
     loadData();
   }, []);
 
+  // Toggle predictions_open
+  async function togglePredictionsOpen() {
+    const { error } = await supabase.from('settings').update({ predictions_open: !settings.predictions_open }).eq('id', settings.id);
+    if (!error) setSettings({ ...settings, predictions_open: !settings.predictions_open });
+  }
+
+  // Update match result and recalc points
+  async function updateMatchResult(matchId, team1, team2) {
+    // Update match scores
+    const { error: matchError } = await supabase.from('matches').update({
+      team1_score: team1,
+      team2_score: team2
+    }).eq('id', matchId);
+
+    if (matchError) {
+      alert("Fout bij updaten match: " + matchError.message);
+      return;
+    }
+
+    // Recalculate points
+    const matchPreds = predictions.filter(p => p.match_id === matchId);
+    for (const p of matchPreds) {
+      let winnerPoints = 0;
+      let scorePoints = 0;
+
+      if (p.team1_score != null && p.team2_score != null) {
+        const predictedWinner = p.team1_score > p.team2_score ? 'team1' :
+                                p.team1_score < p.team2_score ? 'team2' : 'draw';
+        const actualWinner = team1 > team2 ? 'team1' :
+                             team1 < team2 ? 'team2' : 'draw';
+        if (predictedWinner === actualWinner) winnerPoints = 5; // correct_winner = 5
+        if (p.team1_score === team1 && p.team2_score === team2) scorePoints = 25; // correct_score = 25
+      }
+
+      const totalPoints = winnerPoints + scorePoints;
+
+      await supabase.from('pronostieken').update({
+        correct_winner: winnerPoints,
+        correct_score: scorePoints,
+        total_points: totalPoints
+      }).eq('id', p.id);
+
+      // Update local state
+      setPredictions(predictions.map(pred =>
+        pred.id === p.id
+          ? { ...pred, correct_winner: winnerPoints, correct_score: scorePoints, total_points: totalPoints }
+          : pred
+      ));
+    }
+
+    // Update local match scores
+    setMatches(matches.map(m =>
+      m.id === matchId
+        ? { ...m, team1_score: team1, team2_score: team2 }
+        : m
+    ));
+
+    alert("Scores bijgewerkt!");
+  }
+
   if (loading) return <div className="p-4">Laden…</div>;
-
-  // Toggle predictions open/closed
-  const togglePredictions = async () => {
-    const newValue = !settings.predictions_open;
-    await supabase.from('settings').update({ predictions_open: newValue }).eq('id', settings.id);
-    setSettings({ ...settings, predictions_open: newValue });
-  };
-
-  // Update points manually
-  const updatePoints = async (id, field, value) => {
-    await supabase.from('pronostieken').update({ [field]: value }).eq('id', id);
-    // Update local state
-    setPredictions(predictions.map(p => p.id === id ? { ...p, [field]: value } : p));
-  };
 
   return (
     <div className="container p-4">
       <header className="mb-4">
-        <h1 className="text-2xl font-bold">Admin Dashboard — WK 2026</h1>
-        <p className="text-sm text-gray-600">
-          Ingelogd als <strong>{user.name}</strong> ({user.email})
-        </p>
+        <h1 className="text-2xl font-bold">Admin Panel — WK 2026 Pronostiek</h1>
+        <div className="mt-2">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={settings.predictions_open} onChange={togglePredictionsOpen} />
+            Voorspellingen open
+          </label>
+        </div>
       </header>
 
-      {/* Instellingen */}
-      <section className="mb-6 p-3 border rounded">
-        <h2 className="text-lg font-semibold mb-2">Algemene Instellingen</h2>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" checked={settings.predictions_open} onChange={togglePredictions} />
-          Voorspellingen open
-        </label>
+      <section className="mb-6">
+        <h2 className="text-xl font-semibold mb-2">Wedstrijden en Scores</h2>
+        {matches.map(m => (
+          <div key={m.id} className="mb-3 p-3 border rounded">
+            <div className="flex items-center gap-4">
+              <div className="font-medium">{m.team1} vs {m.team2}</div>
+              <input
+                type="number"
+                value={m.team1_score ?? ''}
+                placeholder="Team1"
+                className="w-16 p-1 border"
+                onChange={e => setMatches(matches.map(match =>
+                  match.id === m.id ? { ...match, team1_score: Number(e.target.value) } : match
+                ))}
+              />
+              <span>-</span>
+              <input
+                type="number"
+                value={m.team2_score ?? ''}
+                placeholder="Team2"
+                className="w-16 p-1 border"
+                onChange={e => setMatches(matches.map(match =>
+                  match.id === m.id ? { ...match, team2_score: Number(e.target.value) } : match
+                ))}
+              />
+              <button
+                className="ml-2 px-2 py-1 bg-green-600 text-white rounded"
+                onClick={() => updateMatchResult(m.id, m.team1_score ?? 0, m.team2_score ?? 0)}
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        ))}
       </section>
 
-      {/* Wedstrijden */}
-      <section className="mb-6 p-3 border rounded">
-        <h2 className="text-lg font-semibold mb-2">Wedstrijden</h2>
-        <table className="w-full border-collapse border">
-          <thead>
-            <tr className="border-b">
-              <th className="p-2">Match</th>
-              <th className="p-2">Datum</th>
-              <th className="p-2">Team 1 Score</th>
-              <th className="p-2">Team 2 Score</th>
-              <th className="p-2">Acties</th>
-            </tr>
-          </thead>
-          <tbody>
-            {matches.map(match => (
-              <tr key={match.id} className="border-b">
-                <td className="p-2">{match.team1} vs {match.team2}</td>
-                <td className="p-2">{new Date(match.match_datetime).toLocaleString()}</td>
-                <td className="p-2">{match.team1_score ?? '-'}</td>
-                <td className="p-2">{match.team2_score ?? '-'}</td>
-                <td className="p-2">
-                  <button
-                    className="px-2 py-1 bg-green-600 text-white rounded text-sm"
-                    onClick={() => alert(`Hier kun je scores van match ${match.id} handmatig aanpassen`)}
-                  >
-                    Pas punten aan
-                  </button>
-                </td>
+      <section>
+        <h2 className="text-xl font-semibold mb-2">Voorspellingen Overzicht</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr>
+                <th className="border p-1">Gebruiker</th>
+                <th className="border p-1">Wedstrijd</th>
+                <th className="border p-1">Voorspelling</th>
+                <th className="border p-1">Correct Winner</th>
+                <th className="border p-1">Correct Score</th>
+                <th className="border p-1">Totaal punten</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      {/* Punten overzicht per gebruiker */}
-      <section className="mb-6 p-3 border rounded">
-        <h2 className="text-lg font-semibold mb-2">Voorspellingen / Punten</h2>
-        <table className="w-full border-collapse border text-sm">
-          <thead>
-            <tr className="border-b">
-              <th className="p-2">Speler</th>
-              <th className="p-2">Match ID</th>
-              <th className="p-2">Score Team 1</th>
-              <th className="p-2">Score Team 2</th>
-              <th className="p-2">Juiste winnaar</th>
-              <th className="p-2">Juiste score</th>
-              <th className="p-2">Acties</th>
-            </tr>
-          </thead>
-          <tbody>
-            {predictions.map(p => (
-              <tr key={p.id} className="border-b">
-                <td className="p-2">{p.user_name ?? p.user_id}</td>
-                <td className="p-2">{p.match_id}</td>
-                <td className="p-2">{p.team1_score ?? '-'}</td>
-                <td className="p-2">{p.team2_score ?? '-'}</td>
-                <td className="p-2">
-                  <input
-                    type="number"
-                    value={p.correct_winner ?? 0}
-                    onChange={e => updatePoints(p.id, 'correct_winner', Number(e.target.value))}
-                    className="w-16 border p-1"
-                  />
-                </td>
-                <td className="p-2">
-                  <input
-                    type="number"
-                    value={p.correct_score ?? 0}
-                    onChange={e => updatePoints(p.id, 'correct_score', Number(e.target.value))}
-                    className="w-16 border p-1"
-                  />
-                </td>
-                <td className="p-2">
-                  <button
-                    className="px-2 py-1 bg-blue-600 text-white rounded text-sm"
-                    onClick={() => alert("Nog extra acties")}
-                  >
-                    Acties
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {predictions.map(p => {
+                const match = matches.find(m => m.id === p.match_id);
+                const matchLabel = match ? `${match.team1} vs ${match.team2}` : '';
+                const predLabel = `${p.team1_score ?? '-'} - ${p.team2_score ?? '-'}`;
+                return (
+                  <tr key={p.id}>
+                    <td className="border p-1">{p.user_name || p.user_id}</td>
+                    <td className="border p-1">{matchLabel}</td>
+                    <td className="border p-1">{predLabel}</td>
+                    <td className="border p-1">{p.correct_winner ?? 0}</td>
+                    <td className="border p-1">{p.correct_score ?? 0}</td>
+                    <td className="border p-1">{p.total_points ?? 0}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );
