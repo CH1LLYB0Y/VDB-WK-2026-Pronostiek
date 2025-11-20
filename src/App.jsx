@@ -1,69 +1,59 @@
+import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
+
 import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 
 export default function App() {
   const [user, setUser] = useState(null);
-  const [authLoaded, setAuthLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  // Check current auth state
   useEffect(() => {
-    // Load user on refresh
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
-      setAuthLoaded(true);
+    async function loadUser() {
+      const { data: session } = await supabase.auth.getSession();
+      setUser(session?.session?.user || null);
+      setLoading(false);
+    }
+    loadUser();
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
     });
-
-    // Listen for login/logout
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
-
-    return () => listener.subscription.unsubscribe();
   }, []);
 
-  if (!authLoaded) return <div className="p-4">Laden…</div>;
-
-  function ProtectedRoute({ children }) {
-    return user ? children : <Navigate to="/login" />;
-  }
-
-  function AdminRoute({ children }) {
-    const role = user?.app_metadata?.role;
-    return role === "admin" ? children : <Navigate to="/" />;
-  }
+  if (loading) return <div className="p-4">Laden…</div>;
 
   return (
     <BrowserRouter>
       <Navbar user={user} />
+
       <Routes>
         <Route
           path="/"
           element={
-            <ProtectedRoute>
-              <Home user={user} />
-            </ProtectedRoute>
+            user ? <Home user={user} /> : <Navigate to="/login" replace />
           }
         />
-
-        <Route path="/login" element={<Login user={user} />} />
 
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <Admin />
-              </AdminRoute>
-            </ProtectedRoute>
+            user?.app_metadata?.role === "admin"
+              ? <Admin />
+              : <Navigate to="/" replace />
           }
         />
 
+        <Route
+          path="/login"
+          element={!user ? <Login /> : <Navigate to="/" replace />}
+        />
+
+        {/* fallback */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
