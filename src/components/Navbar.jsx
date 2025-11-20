@@ -1,5 +1,6 @@
-import { supabase } from "../lib/supabaseClient";
+import React from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Navbar({ user }) {
   async function logout() {
@@ -8,14 +9,12 @@ export default function Navbar({ user }) {
   }
 
   return (
-    <nav className="p-4 bg-gray-900 text-white flex justify-between items-center">
-      <Link to="/" className="font-bold text-lg">WK 2026 Pronostiek</Link>
+    <nav className="w-full bg-gray-800 text-white p-3 flex justify-between items-center">
+      <Link to="/" className="font-bold text-lg">
+        WK 2026
+      </Link>
 
       <div className="flex gap-4 items-center">
-
-        {user?.app_metadata?.role === "admin" && (
-          <Link to="/admin" className="hover:underline">Admin</Link>
-        )}
 
         {!user && (
           <Link to="/login" className="hover:underline">
@@ -25,10 +24,15 @@ export default function Navbar({ user }) {
 
         {user && (
           <>
-            <span className="text-gray-300">{user.email}</span>
+            {user.app_metadata?.role === "admin" && (
+              <Link to="/admin" className="hover:underline">
+                Admin
+              </Link>
+            )}
+
             <button
               onClick={logout}
-              className="bg-red-600 px-3 py-1 rounded"
+              className="bg-red-600 px-3 py-1 rounded hover:bg-red-700"
             >
               Logout
             </button>
