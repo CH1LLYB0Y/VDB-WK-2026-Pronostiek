@@ -1,16 +1,12 @@
-import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { Navigate } from "react-router-dom";
 
 export default function AdminRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
 
-  if (loading) return <div>Bezig met laden…</div>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (loading) return <div className="p-4">Laden…</div>;
 
-  // Check metadata role
-  if (user.user_metadata?.role !== "admin") {
-    return <Navigate to="/" replace />;
-  }
+  if (!user || !isAdmin) return <Navigate to="/" replace />;
 
   return children;
 }
