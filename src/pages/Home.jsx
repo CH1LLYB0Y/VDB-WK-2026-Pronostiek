@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-import PronostiekForm from "../components/PronostiekForm";
-import Leaderboard from "../components/Leaderboard";
-import Navbar from "../components/Navbar";
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import PronostiekForm from '../components/PronostiekForm';
+import Leaderboard from '../components/Leaderboard';
 
-export default function Home() {
+export default function Home({ user }) {
   const [matches, setMatches] = useState([]);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,58 +13,65 @@ export default function Home() {
       setLoading(true);
 
       const { data: ms } = await supabase
-        .from("matches")
-        .select("*")
-        .order("match_datetime", { ascending: true });
+        .from('matches')
+        .select('*')
+        .order('match_datetime', { ascending: true });
 
       const { data: s } = await supabase
-        .from("settings")
-        .select("*")
+        .from('settings')
+        .select('*')
         .limit(1)
-        .maybeSingle(); // veilig!
+        .maybeSingle();
 
       setMatches(ms || []);
       setSettings(s || { predictions_open: true });
-
       setLoading(false);
     }
+
     load();
   }, []);
 
   if (loading) return <div className="p-4">Laden…</div>;
 
   return (
-    <div>
-      <Navbar />
+    <div className="container p-4">
+      <header className="mb-4">
+        <h1 className="text-2xl font-bold">WK 2026 — Pronostiek</h1>
+        <p className="text-sm text-gray-600">
+          Ingelogd als <strong>{user.email}</strong>
+        </p>
+        <p className="text-sm text-gray-600">
+          Vul je voorspellingen in vóór de aftrap.
+        </p>
+      </header>
 
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6">Wedstrijden & Voorspellingen</h1>
+      <main className="grid md:grid-cols-2 gap-6">
 
-        <main className="grid md:grid-cols-2 gap-6">
-          <section>
-            {matches.map((m) => (
-              <div key={m.id} className="card mb-3 p-3 border rounded shadow">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">
-                      {m.team1} vs {m.team2}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(m.match_datetime).toLocaleString()}
-                    </div>
+        {/* MATCHES + PRONOSTIEK */}
+        <section>
+          {matches.map((m) => (
+            <div key={m.id} className="card mb-3 p-3 border rounded-lg shadow">
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="font-medium">
+                    {m.team1} vs {m.team2}
                   </div>
-
-                  <PronostiekForm match={m} settings={settings} />
+                  <div className="text-sm text-gray-500">
+                    {new Date(m.match_datetime).toLocaleString()}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </section>
 
-          <aside>
-            <Leaderboard />
-          </aside>
-        </main>
-      </div>
+                <PronostiekForm match={m} settings={settings} />
+              </div>
+            </div>
+          ))}
+        </section>
+
+        {/* LEADERBOARD */}
+        <aside>
+          <Leaderboard />
+        </aside>
+      </main>
     </div>
   );
 }
