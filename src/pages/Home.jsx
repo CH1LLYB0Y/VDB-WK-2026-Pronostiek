@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import "./index.css"; // zorg dat dit bestaat of verplaats naar index.css
 
 export default function Home() {
   return (
