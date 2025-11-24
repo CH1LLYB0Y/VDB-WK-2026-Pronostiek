@@ -13,12 +13,12 @@ export default function Home() {
       {/* BANNER GRID */}
       <div className="banner-grid">
 
-        <Link to="/pronostiek" className="banner-tile banner-green banner-pronostiek">
-          <h2>Pronostiek invullen</h2>
+        <Link to="/pronostiek" className="banner-tile banner-green">
+          <h2>📝 Pronostiek invullen</h2>
         </Link>
 
-        <Link to="/klassement" className="banner-tile banner-blue banner-klassement">
-          <h2>Bekijk Klassement</h2>
+        <Link to="/klassement" className="banner-tile banner-blue">
+          <h2>🏆 Bekijk Klassement</h2>
         </Link>
 
       </div>
