@@ -1,14 +1,21 @@
 import { Link } from "react-router-dom";
+import "./index.css"; // zorg dat dit bestaat of verplaats naar index.css
 
 export default function Home() {
   return (
-    <div className="home-wrapper">
+    <div className="home-container">
 
-      <div className="home-header">
-        <img src="/logo.png" alt="WK 2026" className="home-logo" />
+      {/* HEADER */}
+      <header className="home-header">
+        <img 
+          src="/logo.png" 
+          alt="WK 2026" 
+          className="home-logo"
+        />
         <h1 className="home-title">VDB WK 2026 Pronostiek</h1>
-      </div>
+      </header>
 
+      {/* BANNER GRID */}
       <div className="banner-grid">
 
         <Link to="/pronostiek" className="banner-tile banner-green">
