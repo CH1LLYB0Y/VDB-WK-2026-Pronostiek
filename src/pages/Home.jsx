@@ -11,11 +11,11 @@ export default function Home() {
 
       <div className="banner-grid">
 
-        <Link to="/pronostiek" className="banner banner-green">
+        <Link to="/pronostiek" className="banner-tile banner-green">
           <h2>Pronostiek invullen</h2>
         </Link>
 
-        <Link to="/klassement" className="banner banner-blue">
+        <Link to="/klassement" className="banner-tile banner-blue">
           <h2>Bekijk Klassement</h2>
         </Link>
 
