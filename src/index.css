@@ -1,98 +1,14 @@
 /* ----------------------------------------------------------
-   GLOBAL RESET + BASE STYLING
----------------------------------------------------------- */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body {
-  min-height: 100%;
-  font-family: "Aptos", sans-serif;
-  background: #D1D4D1;
-  color: #474A4A;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ----------------------------------------------------------
-   SMOOTH ANIMATIONS
----------------------------------------------------------- */
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.8s ease-out;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-slide-up {
-  animation: slideUp 0.9s ease-out;
-}
-
-@keyframes logoPop {
-  0% { transform: scale(0.6); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.animate-logo-pop {
-  animation: logoPop 0.6s cubic-bezier(0.19, 1, 0.22, 1);
-}
-
-/* ----------------------------------------------------------
-   HOME PAGE BASE STRUCTURE
----------------------------------------------------------- */
-
-.home-wrapper {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  background: #D1D4D1;
-}
-
-.home-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.home-logo {
-  width: 120px;
-  height: auto;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
-  margin-bottom: 12px;
-}
-
-.home-title {
-  font-size: 1.9rem;
-  font-weight: 700;
-  color: #2A398D;
-  text-align: center;
-  margin-top: 4px;
-}
-
-/* ----------------------------------------------------------
-   RESPONSIVE BANNER GRID
+   🟩🟥🟦 WK 2026 — DYNAMISCHE POWER BANNERS
 ---------------------------------------------------------- */
 
 .banner-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
+  gap: 25px;
   width: 100%;
   max-width: 780px;
-  margin-top: 40px;
+  margin-top: 50px;
 }
 
 @media (min-width: 700px) {
@@ -101,157 +17,156 @@ html, body {
   }
 }
 
-/* ----------------------------------------------------------
-   BANNER TILE STYLING
----------------------------------------------------------- */
+/* ===== BASE TILE ===== */
 
 .banner-tile {
+  position: relative;
+  overflow: hidden;
   text-decoration: none;
-  color: white;
-  padding: 35px 20px;
-  border-radius: 24px;
-  font-size: 1.4rem;
-  font-weight: 600;
-  text-align: center;
+  padding: 45px 20px;
+  border-radius: 28px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  box-shadow: 0 6px 12px rgba(0,0,0,0.18);
-  transition: all 0.28s ease;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: white;
+
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
   cursor: pointer;
 
-  transform: translateY(0);
+  /* 3D tilt effect base */
+  transform-style: preserve-3d;
+  will-change: transform;
+
+  /* Subtle background diagonal texture */
+  background-size: 180%;
+  background-position: center;
 }
+
+/* ===== COLORS WITH SLEEK GRADIENTS ===== */
+
+.banner-green {
+  background: linear-gradient(135deg, #3CAC3B, #2A8A2D);
+}
+
+.banner-blue {
+  background: linear-gradient(135deg, #2A398D, #1B2A6A);
+}
+
+.banner-red {
+  background: linear-gradient(135deg, #E61D25, #B4151B);
+}
+
+/* ----------------------------------------------------------
+   🎇 HOVER EFFECTS — 3D tilt + glow + pop
+---------------------------------------------------------- */
 
 .banner-tile:hover {
-  transform: translateY(-5px) scale(1.03);
-  box-shadow: 0 10px 18px rgba(0,0,0,0.25);
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 18px 35px rgba(0,0,0,0.35);
 }
 
-/* WK COLORS */
-.banner-green { background: #3CAC3B; }
-.banner-blue  { background: #2A398D; }
-.banner-red   { background: #E61D25; }
-
 /* ----------------------------------------------------------
-   NAVBAR STYLING (GLOBAL HEADER)
+   ✨ SHINE SWEEP EFFECT
 ---------------------------------------------------------- */
 
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  padding: 12px 22px;
-  background: white;
-  border-bottom: 3px solid #2A398D;
-
-  position: sticky;
+.banner-tile::after {
+  content: "";
+  position: absolute;
   top: 0;
-  z-index: 20;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255,255,255,0.35) 50%,
+    transparent 100%
+  );
+
+  transform: skewX(-25deg);
 }
 
-.nav-logo {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #2A398D;
+.banner-tile:hover::after {
+  animation: shine-sweep 0.9s forwards;
 }
 
-.nav-links {
-  display: flex;
-  gap: 18px;
-}
-
-.nav-item {
-  color: #474A4A;
-  font-size: 1rem;
-  text-decoration: none;
-  font-weight: 600;
-  transition: 0.2s;
-}
-
-.nav-item:hover {
-  color: #2A398D;
+@keyframes shine-sweep {
+  0% { left: -100%; }
+  100% { left: 130%; }
 }
 
 /* ----------------------------------------------------------
-   GENERAL PAGE TITLES
+   🌟 HOVER GLOW OUTLINE
 ---------------------------------------------------------- */
 
-.page-title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 20px 0;
-  text-align: center;
-  color: #2A398D;
+.banner-tile:hover::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 30px;
+  z-index: -1;
+  filter: blur(14px);
+  opacity: 0.9;
+}
+
+.banner-green:hover::before {
+  background: rgba(60, 172, 59, 0.55);
+}
+
+.banner-blue:hover::before {
+  background: rgba(42, 57, 141, 0.55);
+}
+
+.banner-red:hover::before {
+  background: rgba(230, 29, 37, 0.55);
 }
 
 /* ----------------------------------------------------------
-   FORM ELEMENTS (used in Login, Pronostiek, Admin settings)
+   ⭐ SPORTS STRIPE PATTERN (SUBTLE)
 ---------------------------------------------------------- */
 
-input, select {
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 2px solid #ccc;
-  width: 100%;
-  font-size: 1rem;
-  margin-bottom: 12px;
-}
-
-button {
-  padding: 12px 18px;
-  background: #2A398D;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.25s;
-}
-
-button:hover {
-  background: #1d2a63;
+.banner-tile {
+  background-blend-mode: overlay;
+  background-image:
+    linear-gradient(
+      45deg,
+      rgba(255,255,255,0.07) 0%,
+      rgba(255,255,255,0) 25%,
+      rgba(255,255,255,0.07) 50%,
+      rgba(255,255,255,0) 75%,
+      rgba(255,255,255,0.07) 100%
+    );
 }
 
 /* ----------------------------------------------------------
-   TABLE STYLING (Class Rankings)
+   🔥 ENTRANCE ANIMATION (SPORTY POP-IN)
 ---------------------------------------------------------- */
 
-.table-wrapper {
-  max-width: 900px;
-  margin: 30px auto;
-  padding: 10px;
+.banner-tile {
+  opacity: 0;
+  animation: banner-pop 0.6s ease-out forwards;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 15px;
-  overflow: hidden;
+.banner-tile:nth-child(1) {
+  animation-delay: 0.15s;
+}
+.banner-tile:nth-child(2) {
+  animation-delay: 0.3s;
 }
 
-th {
-  background: #2A398D;
-  color: white;
-  padding: 14px;
-  text-align: left;
-  font-size: 1rem;
-}
-
-td {
-  padding: 12px;
-  border-bottom: 1px solid #ccc;
-}
-
-tr:last-child td {
-  border-bottom: none;
-}
-
-tr:hover td {
-  background: #f5f5f5;
+@keyframes banner-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(25px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
