@@ -1,15 +1,14 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
-import Admin from './pages/Admin';
-import './styles.css';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
 
-createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/admin" element={<Admin />} />
-    </Routes>
-  </BrowserRouter>
+// ⚠️ Dit is super belangrijk:
+// index.css MOET hier geïmporteerd worden,
+// anders werkt je volledige styling niet.
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
 );
