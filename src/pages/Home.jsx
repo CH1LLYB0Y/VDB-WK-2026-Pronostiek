@@ -1,70 +1,100 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import PronostiekForm from '../components/PronostiekForm';
-import Leaderboard from '../components/Leaderboard';
+import React from "react";
+import { Link } from "react-router-dom";
 
 export default function Home() {
-  const [matches, setMatches] = useState([]);
-  const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-
-      const { data: ms, error: matchesErr } = await supabase
-        .from('matches')
-        .select('*')
-        .order('match_datetime', { ascending: true });
-
-      if (matchesErr) console.warn("Fout bij laden wedstrijden:", matchesErr.message);
-
-      const { data: s, error: settingsErr } = await supabase
-        .from('settings')
-        .select('*')
-        .limit(1)
-        .maybeSingle();
-
-      if (settingsErr) console.warn("Fout bij laden settings:", settingsErr.message);
-
-      setMatches(ms || []);
-      setSettings(s || { predictions_open: true });
-      setLoading(false);
-    }
-
-    load();
-  }, []);
-
-  if (loading) return <div className="p-4">Laden…</div>;
+  const colors = {
+    green: "#3CAC3B",
+    blue: "#2A398D",
+    red: "#E61D25",
+    grey: "#D1D4D1",
+    dark: "#474A4A",
+  };
 
   return (
-    <div className="container p-4">
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold">WK 2026 — Pronostiek</h1>
-        <p className="text-sm text-gray-600">
-          Vul je voorspellingen in vóór de aftrap (en zolang admin open laat).
-        </p>
-      </header>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: colors.grey,
+        padding: "20px",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      {/* Header blok met logo */}
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "40px" }}>
+        <img
+          src="https://upload.wikimedia.org/wikipedia/en/0/02/2026_FIFA_World_Cup_logo.svg"
+          alt="WK 2026 Logo"
+          style={{ width: "90px", marginRight: "15px" }}
+        />
 
-      <main className="grid md:grid-cols-2 gap-6">
-        <section>
-          {matches.map(m => (
-            <div key={m.id} className="card mb-3 p-3">
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="font-medium">{m.team1} vs {m.team2}</div>
-                  <div className="text-sm text-gray-500">{new Date(m.match_datetime).toLocaleString()}</div>
-                </div>
-                <PronostiekForm match={m} settings={settings} />
-              </div>
-            </div>
-          ))}
-        </section>
+        <div>
+          <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "bold", color: colors.dark }}>
+            VDB WK 2026 Pronostiek
+          </h1>
+          <small style={{ color: colors.dark, fontSize: "14px" }}>
+            Powered by Supabase • React • Vercel
+          </small>
+        </div>
+      </div>
 
-        <aside>
-          <Leaderboard />
-        </aside>
-      </main>
+      {/* Banner container */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        
+        {/* Pronostiek invullen */}
+        <Link
+          to="/pronostiek"
+          style={{
+            backgroundColor: colors.green,
+            padding: "25px",
+            borderRadius: "12px",
+            textDecoration: "none",
+            color: "white",
+            fontSize: "22px",
+            fontWeight: "bold",
+            textAlign: "center",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+          }}
+        >
+          📝 Pronostiek invullen
+        </Link>
+
+        {/* Klassement */}
+        <Link
+          to="/klassement"
+          style={{
+            backgroundColor: colors.blue,
+            padding: "25px",
+            borderRadius: "12px",
+            textDecoration: "none",
+            color: "white",
+            fontSize: "22px",
+            fontWeight: "bold",
+            textAlign: "center",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+          }}
+        >
+          🏆 Klassement bekijken
+        </Link>
+
+        {/* Voorspellingen sluiten/open info (optioneel future) */}
+        <Link
+          to="/mijn-voorspellingen"
+          style={{
+            backgroundColor: colors.red,
+            padding: "25px",
+            borderRadius: "12px",
+            textDecoration: "none",
+            color: "white",
+            fontSize: "22px",
+            fontWeight: "bold",
+            textAlign: "center",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+          }}
+        >
+          🔍 Mijn voorspellingen
+        </Link>
+
+      </div>
     </div>
   );
 }
