@@ -1,98 +1,257 @@
-/* --- APTOS FONT --- */
-@import url('https://fonts.cdnfonts.com/css/aptos');
+/* ----------------------------------------------------------
+   GLOBAL RESET + BASE STYLING
+---------------------------------------------------------- */
 
-/* --- GLOBAL RESET --- */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* --- BODY STYLING --- */
-body {
-  font-family: 'Aptos', sans-serif;
-  background-color: #D1D4D1;
+html, body {
+  min-height: 100%;
+  font-family: "Aptos", sans-serif;
+  background: #D1D4D1;
   color: #474A4A;
   -webkit-font-smoothing: antialiased;
 }
 
-/* --- LINKS --- */
-a {
-  color: inherit;
-  text-decoration: none;
+/* ----------------------------------------------------------
+   SMOOTH ANIMATIONS
+---------------------------------------------------------- */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- BANNER ANIMATION (Home banners) --- */
-.banner {
-  transition: transform 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
-  opacity: 0.95;
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
 }
 
-.banner:hover {
-  transform: scale(1.03);
-  opacity: 1;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- HEADER STYLING --- */
-header a:hover {
-  opacity: 0.8;
+.animate-slide-up {
+  animation: slideUp 0.9s ease-out;
 }
 
-/* --- BUTTONS --- */
-button {
-  transition: background 0.25s ease, transform 0.15s ease;
+@keyframes logoPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-button:hover {
-  transform: scale(1.02);
+.animate-logo-pop {
+  animation: logoPop 0.6s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* --- INPUT FIELDS --- */
-input {
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #aaa;
-  font-size: 15px;
+/* ----------------------------------------------------------
+   HOME PAGE BASE STRUCTURE
+---------------------------------------------------------- */
+
+.home-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: #D1D4D1;
 }
 
-input:focus {
-  outline: none;
-  border-color: #2A398D;
-  box-shadow: 0 0 0 3px rgba(42, 57, 141, 0.2);
+.home-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* --- CARD BASE STYLING (for match blocks & ranking) --- */
-.card {
-  background-color: white;
-  border: 1px solid #ccc;
-  padding: 15px;
-  border-radius: 10px;
+.home-logo {
+  width: 120px;
+  height: auto;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+  margin-bottom: 12px;
 }
 
-/* --- RESPONSIVE GRID HELPERS --- */
-
-/* 3 kolommen desktop */
-@media (min-width: 900px) {
-  .grid-3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-  }
+.home-title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #2A398D;
+  text-align: center;
+  margin-top: 4px;
 }
 
-/* 2 kolommen tablet */
-@media (min-width: 600px) and (max-width: 899px) {
-  .grid-2 {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-  }
-}
+/* ----------------------------------------------------------
+   RESPONSIVE BANNER GRID
+---------------------------------------------------------- */
 
-/* 1 kolom mobiel */
-.grid-1 {
+.banner-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+  width: 100%;
+  max-width: 780px;
+  margin-top: 40px;
+}
+
+@media (min-width: 700px) {
+  .banner-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ----------------------------------------------------------
+   BANNER TILE STYLING
+---------------------------------------------------------- */
+
+.banner-tile {
+  text-decoration: none;
+  color: white;
+  padding: 35px 20px;
+  border-radius: 24px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-align: center;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 6px 12px rgba(0,0,0,0.18);
+  transition: all 0.28s ease;
+  cursor: pointer;
+
+  transform: translateY(0);
+}
+
+.banner-tile:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 10px 18px rgba(0,0,0,0.25);
+}
+
+/* WK COLORS */
+.banner-green { background: #3CAC3B; }
+.banner-blue  { background: #2A398D; }
+.banner-red   { background: #E61D25; }
+
+/* ----------------------------------------------------------
+   NAVBAR STYLING (GLOBAL HEADER)
+---------------------------------------------------------- */
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 12px 22px;
+  background: white;
+  border-bottom: 3px solid #2A398D;
+
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.nav-logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2A398D;
+}
+
+.nav-links {
+  display: flex;
+  gap: 18px;
+}
+
+.nav-item {
+  color: #474A4A;
+  font-size: 1rem;
+  text-decoration: none;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.nav-item:hover {
+  color: #2A398D;
+}
+
+/* ----------------------------------------------------------
+   GENERAL PAGE TITLES
+---------------------------------------------------------- */
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 20px 0;
+  text-align: center;
+  color: #2A398D;
+}
+
+/* ----------------------------------------------------------
+   FORM ELEMENTS (used in Login, Pronostiek, Admin settings)
+---------------------------------------------------------- */
+
+input, select {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 2px solid #ccc;
+  width: 100%;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+button {
+  padding: 12px 18px;
+  background: #2A398D;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+button:hover {
+  background: #1d2a63;
+}
+
+/* ----------------------------------------------------------
+   TABLE STYLING (Class Rankings)
+---------------------------------------------------------- */
+
+.table-wrapper {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+th {
+  background: #2A398D;
+  color: white;
+  padding: 14px;
+  text-align: left;
+  font-size: 1rem;
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid #ccc;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background: #f5f5f5;
 }
