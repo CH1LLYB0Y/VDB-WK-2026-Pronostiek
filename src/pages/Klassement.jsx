@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import Header from "../components/Header";
-import supabase from "../supabase";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Klassement() {
   const [scores, setScores] = useState([]);
@@ -10,38 +9,24 @@ export default function Klassement() {
   }, []);
 
   async function loadScores() {
-    const { data, error } = await supabase
-      .from("user_scores")
-      .select("*")
-      .order("total_points", { ascending: false });
+    const { data } = await supabase
+      .rpc("get_leaderboard"); // jouw RPC of table
 
-    if (!error) setScores(data);
+    setScores(data || []);
   }
 
   return (
-    <div>
-      <Header />
+    <div className="page">
+      <h1>Klassement</h1>
 
-      <div style={{ padding: "20px" }}>
-        <h2>Klassement</h2>
-
-        {scores.map((s, index) => (
-          <div
-            key={s.id}
-            style={{
-              padding: "15px",
-              marginBottom: "10px",
-              background: "#ffffff",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
-          >
-            <b>{index + 1}. {s.user_name}</b>
-            <br />
-            {s.total_points} punten
-          </div>
+      <ul className="ranking-list">
+        {scores.map((s, i) => (
+          <li key={s.user_id}>
+            <span>{i+1}. {s.email}</span>
+            <b>{s.total_points} pts</b>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
