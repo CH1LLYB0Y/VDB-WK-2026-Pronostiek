@@ -1,84 +1,155 @@
-/* ----------------------------------------------------------
-   🟩🟥🟦 WK 2026 — DYNAMISCHE POWER BANNERS
----------------------------------------------------------- */
+/* --------------------------------------------------------
+   FONTS
+-------------------------------------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Aptos:wght@300;400;600;700;800&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Aptos", sans-serif;
+}
+
+/* --------------------------------------------------------
+   GLOBAL COLORS (WK 2026)
+-------------------------------------------------------- */
+:root {
+  --wk-green: #3CAC3B;
+  --wk-blue: #2A398D;
+  --wk-red: #E61D25;
+  --wk-grey: #D1D4D1;
+  --wk-dark: #474A4A;
+  --bg-light: #f4f4f4;
+}
+
+/* --------------------------------------------------------
+   PAGE LAYOUT
+-------------------------------------------------------- */
+
+body {
+  background: var(--bg-light);
+}
+
+.home-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+/* --------------------------------------------------------
+   HEADER + LOGO
+-------------------------------------------------------- */
+
+.home-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 35px;
+}
+
+.home-logo {
+  width: 180px;          /* ← pas hier de grootte aan */
+  max-width: 60vw;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+.home-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--wk-dark);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.12);
+}
+
+/* --------------------------------------------------------
+   BANNER GRID
+-------------------------------------------------------- */
 
 .banner-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 25px;
-  width: 100%;
-  max-width: 780px;
-  margin-top: 50px;
+  gap: 22px;
+  margin-top: 35px;
 }
 
 @media (min-width: 700px) {
   .banner-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
   }
 }
 
-/* ===== BASE TILE ===== */
+/* --------------------------------------------------------
+   WK-DESIGN DYNAMIC BANNERS
+-------------------------------------------------------- */
 
 .banner-tile {
   position: relative;
-  overflow: hidden;
-  text-decoration: none;
   padding: 45px 20px;
   border-radius: 28px;
-
+  
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 
-  text-align: center;
-  font-size: 1.6rem;
-  font-weight: 700;
+  text-decoration: none;
+  font-size: 1.7rem;
+  font-weight: 800;
   color: white;
 
-  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  overflow: hidden;
   cursor: pointer;
 
-  /* 3D tilt effect base */
-  transform-style: preserve-3d;
-  will-change: transform;
+  /* Smooth hover */
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
 
-  /* Subtle background diagonal texture */
-  background-size: 180%;
-  background-position: center;
+  /* Base 3D feel */
+  will-change: transform;
 }
 
-/* ===== COLORS WITH SLEEK GRADIENTS ===== */
-
 .banner-green {
-  background: linear-gradient(135deg, #3CAC3B, #2A8A2D);
+  background: linear-gradient(135deg, #3CAB3A, #2A8A2D);
 }
 
 .banner-blue {
   background: linear-gradient(135deg, #2A398D, #1B2A6A);
 }
 
-.banner-red {
-  background: linear-gradient(135deg, #E61D25, #B4151B);
+/* TEXT ALWAYS VISIBLE */
+.banner-tile h2 {
+  position: relative;
+  z-index: 5;
+  color: white;
+  text-shadow: 0 3px 6px rgba(0,0,0,0.35);
 }
 
-/* ----------------------------------------------------------
-   🎇 HOVER EFFECTS — 3D tilt + glow + pop
----------------------------------------------------------- */
-
+/* POP EFFECT */
 .banner-tile:hover {
   transform: translateY(-8px) scale(1.05);
   box-shadow: 0 18px 35px rgba(0,0,0,0.35);
 }
 
-/* ----------------------------------------------------------
-   ✨ SHINE SWEEP EFFECT
----------------------------------------------------------- */
+/* LIGHT STRIPE TEXTURE */
+.banner-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 
+  background-image: linear-gradient(
+    45deg,
+    rgba(255,255,255,0.05) 0%,
+    rgba(255,255,255,0) 50%,
+    rgba(255,255,255,0.05) 100%
+  );
+}
+
+/* SHINE EFFECT (ONLY ON HOVER) */
 .banner-tile::after {
   content: "";
   position: absolute;
   top: 0;
-  left: -100%;
+  left: -120%;
   width: 60%;
   height: 100%;
 
@@ -90,83 +161,15 @@
   );
 
   transform: skewX(-25deg);
+  opacity: 0;
 }
 
 .banner-tile:hover::after {
   animation: shine-sweep 0.9s forwards;
+  opacity: 1;
 }
 
 @keyframes shine-sweep {
-  0% { left: -100%; }
+  0%   { left: -120%; }
   100% { left: 130%; }
-}
-
-/* ----------------------------------------------------------
-   🌟 HOVER GLOW OUTLINE
----------------------------------------------------------- */
-
-.banner-tile:hover::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: 30px;
-  z-index: -1;
-  filter: blur(14px);
-  opacity: 0.9;
-}
-
-.banner-green:hover::before {
-  background: rgba(60, 172, 59, 0.55);
-}
-
-.banner-blue:hover::before {
-  background: rgba(42, 57, 141, 0.55);
-}
-
-.banner-red:hover::before {
-  background: rgba(230, 29, 37, 0.55);
-}
-
-/* ----------------------------------------------------------
-   ⭐ SPORTS STRIPE PATTERN (SUBTLE)
----------------------------------------------------------- */
-
-.banner-tile {
-  background-blend-mode: overlay;
-  background-image:
-    linear-gradient(
-      45deg,
-      rgba(255,255,255,0.07) 0%,
-      rgba(255,255,255,0) 25%,
-      rgba(255,255,255,0.07) 50%,
-      rgba(255,255,255,0) 75%,
-      rgba(255,255,255,0.07) 100%
-    );
-}
-
-/* ----------------------------------------------------------
-   🔥 ENTRANCE ANIMATION (SPORTY POP-IN)
----------------------------------------------------------- */
-
-.banner-tile {
-  opacity: 0;
-  animation: banner-pop 0.6s ease-out forwards;
-}
-
-.banner-tile:nth-child(1) {
-  animation-delay: 0.15s;
-}
-.banner-tile:nth-child(2) {
-  animation-delay: 0.3s;
-}
-
-@keyframes banner-pop {
-  0% {
-    opacity: 0;
-    transform: translateY(25px) scale(0.92);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
