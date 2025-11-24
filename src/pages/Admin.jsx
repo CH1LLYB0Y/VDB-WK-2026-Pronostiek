@@ -37,7 +37,6 @@ export default function Admin() {
 
       {settings && (
         <div className="admin-box">
-
           <h3>Voorspellingen</h3>
           <label className="switch-row">
             <span>Open voor spelers</span>
@@ -47,7 +46,6 @@ export default function Admin() {
               onChange={toggleOpen}
             />
           </label>
-
         </div>
       )}
     </div>
