@@ -12,7 +12,8 @@ export default function Pronostiek() {
     const { data } = await supabase
       .from("matches")
       .select("*")
-      .order("match_datetime", { ascending: true });
+      .order("datum", { ascending: true })
+      .order("tijd", { ascending: true });
 
     setMatches(data || []);
   }
@@ -22,9 +23,12 @@ export default function Pronostiek() {
       <h1>Mijn Pronostiek</h1>
 
       {matches.map((m) => (
-        <div key={m.id} className="match-card">
-          <div>{m.team1} vs {m.team2}</div>
-          <div>{new Date(m.match_datetime).toLocaleString()}</div>
+        <div key={m.ID} className="match-card">
+          <div className="match-teams">{m.team1} vs {m.team2}</div>
+          <div className="match-info">
+            <span>{new Date(m.datum).toLocaleDateString()}</span> - <span>{m.tijd}</span>
+          </div>
+          <div className="match-location">{m.locatie}</div>
         </div>
       ))}
     </div>
