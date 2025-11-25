@@ -479,8 +479,8 @@ body {
 .group-header {
   width: 100%;
   padding: 16px 20px;
-  background: var(--wk-blue);
-  color: white;
+  background: var(--wk-blue);   /* Donkere kleur */
+  color: #ffffff !important;    /* Helder wit, altijd zichtbaar */
   font-size: 1.3rem;
   font-weight: 800;
   border: none;
