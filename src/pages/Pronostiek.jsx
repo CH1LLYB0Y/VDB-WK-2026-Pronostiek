@@ -60,9 +60,9 @@ export default function Pronostiek() {
           <div className="group-block" key={group}>
 
             {/* TOGGLE HEADER */}
-            <button className="group-header" onClick={() => toggleGroup(group)}>
-              <span className="group-title">Poule {group}</span>
-              <span className="group-arrow">{openGroups[group] ? "▲" : "▼"}</span>
+            <button className="group-header">
+              <span className="group-header-title">{group}</span>
+              <span className="group-header-arrow">{isOpen ? "▲" : "▼"}</span>
             </button>
 
             {/* INKLAPBARE CONTENT */}
