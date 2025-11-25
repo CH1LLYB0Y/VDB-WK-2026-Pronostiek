@@ -1,10 +1,32 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-function flagFromCountryCode(code) {
-  if (!code || code.length !== 2) return "🏳️";
-  const base = 127397;
-  return String.fromCodePoint(...[...code.toUpperCase()].map(c => base + c.charCodeAt(0)));
+/*
+  Plain CSS versie (geen Tailwind).
+  - Verwacht dat je CSS-classes in index.css aanwezig zijn (voorbeeld hieronder).
+  - Vlaggen: zoekt naar /flags/<team>.png in public map. Als die er niet is, toont hij een default globe emoji.
+*/
+
+function Flag({ team }) {
+  // probeer een image in public/flags/{team}.png (voeg kleine slugify toe)
+  if (!team) return <span className="flag-fallback">🏳️</span>;
+  const fileName = team
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const imgUrl = `/flags/${fileName}.png`;
+  // We can't check existence synchronously; use <img> and fallback with onError.
+  return (
+    <img
+      src={imgUrl}
+      alt={team}
+      className="team-flag"
+      onError={(e) => {
+        // fallback to emoji if image missing
+        e.currentTarget.style.display = "none";
+      }}
+    />
+  );
 }
 
 export default function Pronostiek() {
@@ -14,9 +36,13 @@ export default function Pronostiek() {
 
   useEffect(() => {
     loadMatches();
+    // also load existing predictions for current logged-in user
+    loadUserPredictions();
+    // eslint-disable-next-line
   }, []);
 
   async function loadMatches() {
+    setLoading(true);
     const { data, error } = await supabase
       .from("matches")
       .select("*")
@@ -24,153 +50,217 @@ export default function Pronostiek() {
       .order("tijd", { ascending: true });
 
     if (error) {
-      console.error(error);
+      console.error("Error loading matches:", error);
+      setLoading(false);
       return;
     }
 
-    // groepeer op poule (eerste letter van teamnr1)
+    // group by letter from teamnr1 (first char)
     const grouped = {};
-    data.forEach((m) => {
-      const groupLetter = m.teamnr1?.charAt(0).toUpperCase() ?? "?";
-      if (!grouped[groupLetter]) grouped[groupLetter] = [];
-      grouped[groupLetter].push(m);
+    (data || []).forEach((m) => {
+      const teamnr1 = m.teamnr1 ?? m.teamNr1 ?? "";
+      const group = (teamnr1 && teamnr1[0]) ? teamnr1[0].toUpperCase() : "?";
+      if (!grouped[group]) grouped[group] = [];
+      grouped[group].push(m);
     });
 
     setGroups(grouped);
     setLoading(false);
   }
 
-  function updateScore(matchId, field, value) {
-    setPredictions((prev) => ({
-      ...prev,
-      [matchId]: { ...prev[matchId], [field]: value }
-    }));
-  }
+  async function loadUserPredictions() {
+    const sessionRes = await supabase.auth.getSession();
+    const userId = sessionRes?.data?.session?.user?.id;
+    if (!userId) return;
 
-  async function savePrediction(matchId) {
-    const pred = predictions[matchId];
-    if (!pred) return;
-
-    const user = await supabase.auth.getUser();
-    const userId = user.data?.user?.id;
-
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("pronostieken")
-      .upsert(
-        {
-          user_id: userId,
-          match_id: matchId,
-          score_team1: pred.score_team1 || null,
-          score_team2: pred.score_team2 || null,
-        },
-        { onConflict: "user_id,match_id" }
-      );
+      .select("*")
+      .eq("user_id", userId);
 
     if (error) {
-      console.error(error);
-      alert("Er ging iets mis bij het opslaan.");
-    } else {
-      alert("Pronostiek opgeslagen!");
+      console.error("Error loading predictions:", error);
+      return;
+    }
+
+    const map = {};
+    (data || []).forEach((p) => {
+      map[p.match_id] = {
+        team1_score: p.team1_score,
+        team2_score: p.team2_score,
+        rowId: p.id,
+      };
+    });
+    setPredictions(map);
+  }
+
+  function formatDate(d) {
+    if (!d) return "";
+    try {
+      // if it's a Date-like string, normalize
+      const dt = new Date(d);
+      return dt.toLocaleDateString("nl-BE");
+    } catch {
+      return d;
     }
   }
 
+  function formatTime(t) {
+    if (!t) return "";
+    // if time stored like "18:00:00" show HH:MM
+    return typeof t === "string" ? t.substring(0, 5) : t;
+  }
+
+  function handleLocalChange(matchKey, field, value) {
+    setPredictions((prev) => {
+      const prevRow = prev[matchKey] || {};
+      return {
+        ...prev,
+        [matchKey]: { ...prevRow, [field]: value },
+      };
+    });
+  }
+
+  async function handleSave(match) {
+    const matchKey = match.id ?? match.ID;
+    const pred = predictions[matchKey] || {};
+    const sessionRes = await supabase.auth.getSession();
+    const userId = sessionRes?.data?.session?.user?.id;
+    if (!userId) {
+      alert("Je moet ingelogd zijn om je voorspelling op te slaan.");
+      return;
+    }
+
+    // upsert into pronostieken
+    const payload = {
+      user_id: userId,
+      match_id: matchKey,
+      team1_score: pred.team1_score === "" ? null : (pred.team1_score ? Number(pred.team1_score) : null),
+      team2_score: pred.team2_score === "" ? null : (pred.team2_score ? Number(pred.team2_score) : null),
+    };
+
+    // Use upsert with onConflict on user_id & match_id (Supabase v2 syntax)
+    const { error, data } = await supabase
+      .from("pronostieken")
+      .upsert(payload, { onConflict: ["user_id", "match_id"] })
+      .select()
+      .single()
+      .catch((e) => ({ error: e }));
+
+    if (error) {
+      console.error("Save error:", error);
+      alert("Opslaan mislukt. Kijk console voor details.");
+      return;
+    }
+
+    // refresh local predictions map (data may be present)
+    if (data) {
+      setPredictions((prev) => ({
+        ...prev,
+        [matchKey]: {
+          team1_score: data.team1_score,
+          team2_score: data.team2_score,
+          rowId: data.id,
+        },
+      }));
+    } else {
+      // reload predictions if server didn't return
+      loadUserPredictions();
+    }
+
+    // brief feedback
+    const originalTeam1 = match.team1 ?? "";
+    const originalTeam2 = match.team2 ?? "";
+    alert(`Voorspelling voor ${originalTeam1} vs ${originalTeam2} opgeslagen.`);
+  }
+
   return (
-    <div className="flex justify-center w-full px-4">
-      <div className="w-full max-w-2xl py-8 mx-auto">
+    <div className="pronostiek-page">
+      <div className="pronostiek-container">
+        <h1 className="pronostiek-title">Mijn Pronostiek</h1>
 
-        <h1 className="text-3xl font-extrabold text-center text-gray-900 mb-8">
-          Mijn Pronostiek
-        </h1>
+        {loading && <div className="pronostiek-loading">Laden…</div>}
 
-        {loading && <p className="text-center">Laden…</p>}
+        {!loading && Object.keys(groups).length === 0 && (
+          <div className="pronostiek-empty">Geen wedstrijden gevonden.</div>
+        )}
 
         {!loading &&
           Object.keys(groups)
             .sort()
             .map((group) => (
-              <div key={group} className="mb-12">
+              <section key={group} className="group-section">
+                <h2 className="group-title">Groep {group}</h2>
 
-                {/* Poule titel */}
-                <h2 className="text-2xl font-bold mb-5 text-blue-700 text-center">
-                  Poule {group}
-                </h2>
-
-                <div className="space-y-6">
-                  {groups[group].map((m) => {
-                    const flag1 = flagFromCountryCode(m.teamnr1?.slice(1,3));
-                    const flag2 = flagFromCountryCode(m.teamnr2?.slice(1,3));
+                <div className="group-matches">
+                  {(groups[group] || []).map((m) => {
+                    const matchKey = m.id ?? m.ID;
+                    const pred = predictions[matchKey] || {};
 
                     return (
-                      <div
-                        key={m.id}
-                        className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 text-center"
-                      >
-                        {/* TEAMS IN ÉÉN RIJ */}
-                        <div className="flex justify-center items-center gap-4 mb-3">
+                      <article key={matchKey} className="match-card">
+                        <div className="match-top">
+                          <div className="teams-row">
+                            <div className="team-left">
+                              <Flag team={m.team1} />
+                              <div className="team-name">{m.team1}</div>
+                            </div>
 
-                          <span className="text-3xl">{flag1}</span>
+                            <div className="vs-block">vs</div>
 
-                          <span className="text-lg font-semibold text-gray-900">
-                            {m.team1}
-                          </span>
+                            <div className="team-right">
+                              <Flag team={m.team2} />
+                              <div className="team-name">{m.team2}</div>
+                            </div>
+                          </div>
 
-                          <span className="text-gray-500 font-bold">vs</span>
-
-                          <span className="text-lg font-semibold text-gray-900">
-                            {m.team2}
-                          </span>
-
-                          <span className="text-3xl">{flag2}</span>
-
+                          <div className="meta-row">
+                            <div className="meta-datetime">
+                              {formatDate(m.datum)} — {formatTime(m.tijd)}
+                            </div>
+                            <div className="meta-location">🏟️ {m.locatie}</div>
+                          </div>
                         </div>
 
-                        {/* Datum + tijd */}
-                        <p className="text-sm text-gray-700 font-medium">
-                          {m.datum} — {m.tijd?.slice(0, 5)}
-                        </p>
+                        <div className="match-bottom">
+                          <div className="score-inputs">
+                            <input
+                              className="score-input"
+                              type="number"
+                              min="0"
+                              value={pred.team1_score ?? ""}
+                              onChange={(e) =>
+                                handleLocalChange(matchKey, "team1_score", e.target.value)
+                              }
+                              placeholder="-"
+                            />
+                            <span className="score-sep">—</span>
+                            <input
+                              className="score-input"
+                              type="number"
+                              min="0"
+                              value={pred.team2_score ?? ""}
+                              onChange={(e) =>
+                                handleLocalChange(matchKey, "team2_score", e.target.value)
+                              }
+                              placeholder="-"
+                            />
+                          </div>
 
-                        {/* Locatie */}
-                        <p className="text-sm text-gray-500 mt-1">
-                          🏟️ {m.locatie}
-                        </p>
-
-                        {/* SCORE INPUTS */}
-                        <div className="flex justify-center items-center gap-3 mt-4">
-                          <input
-                            type="number"
-                            min="0"
-                            className="w-12 p-1 text-center border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                            value={predictions[m.id]?.score_team1 || ""}
-                            onChange={(e) =>
-                              updateScore(m.id, "score_team1", e.target.value)
-                            }
-                          />
-
-                          <span className="font-bold text-gray-700">-</span>
-
-                          <input
-                            type="number"
-                            min="0"
-                            className="w-12 p-1 text-center border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                            value={predictions[m.id]?.score_team2 || ""}
-                            onChange={(e) =>
-                              updateScore(m.id, "score_team2", e.target.value)
-                            }
-                          />
+                          <div className="save-area">
+                            <button
+                              className="btn-save"
+                              onClick={() => handleSave(m)}
+                            >
+                              Opslaan
+                            </button>
+                          </div>
                         </div>
-
-                        {/* OPSLAAN */}
-                        <button
-                          onClick={() => savePrediction(m.id)}
-                          className="mt-4 px-5 py-2 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700 active:scale-95 transition"
-                        >
-                          Opslaan
-                        </button>
-                      </div>
+                      </article>
                     );
                   })}
                 </div>
-              </div>
+              </section>
             ))}
       </div>
     </div>
