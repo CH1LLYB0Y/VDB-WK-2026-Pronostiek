@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-// Helper om emoji-vlaggen te genereren op basis van landcode
-// (Werkt alleen als team1/team2 een 2-letter code zijn, bv. "FR", "BE")
 function flagFromCountryCode(code) {
   if (!code || code.length !== 2) return "🏳️";
   const base = 127397;
@@ -30,6 +28,7 @@ export default function Pronostiek() {
       return;
     }
 
+    // groepeer op poule (eerste letter van teamnr1)
     const grouped = {};
     data.forEach((m) => {
       const groupLetter = m.teamnr1?.charAt(0).toUpperCase() ?? "?";
@@ -76,8 +75,8 @@ export default function Pronostiek() {
   }
 
   return (
-    <div className="flex justify-center px-4">
-      <div className="w-full max-w-3xl py-8">
+    <div className="flex justify-center w-full px-4">
+      <div className="w-full max-w-2xl py-8 mx-auto">
 
         <h1 className="text-3xl font-extrabold text-center text-gray-900 mb-8">
           Mijn Pronostiek
@@ -89,41 +88,45 @@ export default function Pronostiek() {
           Object.keys(groups)
             .sort()
             .map((group) => (
-              <div key={group} className="mb-10">
+              <div key={group} className="mb-12">
 
-                {/* Groepsnaam */}
-                <h2 className="text-2xl font-bold mb-4 text-blue-700 text-center">
+                {/* Poule titel */}
+                <h2 className="text-2xl font-bold mb-5 text-blue-700 text-center">
                   Poule {group}
                 </h2>
 
                 <div className="space-y-6">
                   {groups[group].map((m) => {
-                    const flag1 = flagFromCountryCode(m.team1_code);
-                    const flag2 = flagFromCountryCode(m.team2_code);
+                    const flag1 = flagFromCountryCode(m.teamnr1?.slice(1,3));
+                    const flag2 = flagFromCountryCode(m.teamnr2?.slice(1,3));
 
                     return (
                       <div
                         key={m.id}
                         className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 text-center"
                       >
-                        {/* Teams + vlaggen */}
+                        {/* TEAMS IN ÉÉN RIJ */}
                         <div className="flex justify-center items-center gap-4 mb-3">
-                          <div className="text-3xl">{flag1}</div>
-                          <div className="text-lg font-semibold text-gray-900">
+
+                          <span className="text-3xl">{flag1}</span>
+
+                          <span className="text-lg font-semibold text-gray-900">
                             {m.team1}
-                          </div>
+                          </span>
 
-                          <span className="text-gray-600 font-bold">vs</span>
+                          <span className="text-gray-500 font-bold">vs</span>
 
-                          <div className="text-lg font-semibold text-gray-900">
+                          <span className="text-lg font-semibold text-gray-900">
                             {m.team2}
-                          </div>
-                          <div className="text-3xl">{flag2}</div>
+                          </span>
+
+                          <span className="text-3xl">{flag2}</span>
+
                         </div>
 
-                        {/* Datum & tijd */}
+                        {/* Datum + tijd */}
                         <p className="text-sm text-gray-700 font-medium">
-                          {m.datum} — {m.tijd.slice(0, 5)}
+                          {m.datum} — {m.tijd?.slice(0, 5)}
                         </p>
 
                         {/* Locatie */}
@@ -131,7 +134,7 @@ export default function Pronostiek() {
                           🏟️ {m.locatie}
                         </p>
 
-                        {/* Score inputs */}
+                        {/* SCORE INPUTS */}
                         <div className="flex justify-center items-center gap-3 mt-4">
                           <input
                             type="number"
@@ -156,7 +159,7 @@ export default function Pronostiek() {
                           />
                         </div>
 
-                        {/* Opslaan button */}
+                        {/* OPSLAAN */}
                         <button
                           onClick={() => savePrediction(m.id)}
                           className="mt-4 px-5 py-2 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700 active:scale-95 transition"
