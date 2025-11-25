@@ -495,3 +495,8 @@ body {
   flex-direction: column;
   gap: 18px;
 }
+
+.group-header-title,
+.group-header-arrow {
+  color: #ffffff !important;   /* Hard override -->
+}
