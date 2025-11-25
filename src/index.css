@@ -352,19 +352,21 @@ body {
 /* bottom row: inputs + save */
 .match-bottom {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 12px;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;         /* Stapel alles onder elkaar */
+  align-items: center;            /* <-- CENTREERT SCOREINPUTS EN KNOP */
+  justify-content: center;
+  margin-top: 16px;
+  gap: 14px;
+  width: 100%;
 }
 
 /* score inputs */
 .score-inputs {
   display: flex;
+  justify-content: center;         /* <-- CENTREERT SCOREBOXEN */
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  width: 100%;
 }
 
 /* smaller, rounded score inputs */
@@ -388,8 +390,10 @@ body {
 /* save button area */
 .save-area {
   display: flex;
+  justify-content: center;         /* <-- CENTREERT KNOP */
   align-items: center;
-  gap: 8px;
+  width: 100%;
+  gap: 10px;
 }
 
 .btn-save {
