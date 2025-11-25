@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
+// Helper om emoji-vlaggen te genereren op basis van landcode
+// (Werkt alleen als team1/team2 een 2-letter code zijn, bv. "FR", "BE")
+function flagFromCountryCode(code) {
+  if (!code || code.length !== 2) return "🏳️";
+  const base = 127397;
+  return String.fromCodePoint(...[...code.toUpperCase()].map(c => base + c.charCodeAt(0)));
+}
+
 export default function Pronostiek() {
   const [groups, setGroups] = useState({});
-  const [predictions, setPredictions] = useState({}); // lokale scores
+  const [predictions, setPredictions] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,11 +30,9 @@ export default function Pronostiek() {
       return;
     }
 
-    // Groepeer per poule (teamnr1 begint met A/B/C/…)
     const grouped = {};
     data.forEach((m) => {
       const groupLetter = m.teamnr1?.charAt(0).toUpperCase() ?? "?";
-
       if (!grouped[groupLetter]) grouped[groupLetter] = [];
       grouped[groupLetter].push(m);
     });
@@ -35,18 +41,13 @@ export default function Pronostiek() {
     setLoading(false);
   }
 
-  // Score wijziging opslaan in lokale state
   function updateScore(matchId, field, value) {
     setPredictions((prev) => ({
       ...prev,
-      [matchId]: {
-        ...prev[matchId],
-        [field]: value
-      }
+      [matchId]: { ...prev[matchId], [field]: value }
     }));
   }
 
-  // Opslaan in database (supabase tabel: pronostieken)
   async function savePrediction(matchId) {
     const pred = predictions[matchId];
     if (!pred) return;
@@ -54,12 +55,7 @@ export default function Pronostiek() {
     const user = await supabase.auth.getUser();
     const userId = user.data?.user?.id;
 
-    if (!userId) {
-      alert("Je moet ingelogd zijn om je pronostiek op te slaan.");
-      return;
-    }
-
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("pronostieken")
       .upsert(
         {
@@ -80,77 +76,100 @@ export default function Pronostiek() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-extrabold text-center text-gray-800 mb-8">
-        Mijn Pronostiek
-      </h1>
+    <div className="flex justify-center px-4">
+      <div className="w-full max-w-3xl py-8">
 
-      {loading && <p className="text-center">Laden…</p>}
+        <h1 className="text-3xl font-extrabold text-center text-gray-900 mb-8">
+          Mijn Pronostiek
+        </h1>
 
-      {!loading &&
-        Object.keys(groups).sort().map((group) => (
-          <div key={group} className="mb-10">
+        {loading && <p className="text-center">Laden…</p>}
 
-            {/* Groepsheader */}
-            <h2 className="text-2xl font-bold mb-4 text-wkblue">
-              Poule {group}
-            </h2>
+        {!loading &&
+          Object.keys(groups)
+            .sort()
+            .map((group) => (
+              <div key={group} className="mb-10">
 
-            <div className="space-y-6">
-              {groups[group].map((m) => (
-                <div
-                  key={m.id}
-                  className="bg-white rounded-2xl shadow-md p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-gray-200"
-                >
-                  {/* Teams */}
-                  <div className="flex-1">
-                    <p className="text-lg font-semibold text-gray-900">
-                      {m.team1} <span className="text-gray-500">vs</span> {m.team2}
-                    </p>
+                {/* Groepsnaam */}
+                <h2 className="text-2xl font-bold mb-4 text-blue-700 text-center">
+                  Poule {group}
+                </h2>
 
-                    <p className="text-sm text-gray-600">
-                      {m.datum} — {m.tijd.slice(0, 5)}  
-                      <span className="ml-2 text-gray-500">({m.locatie})</span>
-                    </p>
-                  </div>
+                <div className="space-y-6">
+                  {groups[group].map((m) => {
+                    const flag1 = flagFromCountryCode(m.team1_code);
+                    const flag2 = flagFromCountryCode(m.team2_code);
 
-                  {/* Score invullen */}
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-14 p-2 text-center border rounded-xl"
-                      value={predictions[m.id]?.score_team1 || ""}
-                      onChange={(e) =>
-                        updateScore(m.id, "score_team1", e.target.value)
-                      }
-                    />
+                    return (
+                      <div
+                        key={m.id}
+                        className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200 text-center"
+                      >
+                        {/* Teams + vlaggen */}
+                        <div className="flex justify-center items-center gap-4 mb-3">
+                          <div className="text-3xl">{flag1}</div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            {m.team1}
+                          </div>
 
-                    <span className="font-bold">-</span>
+                          <span className="text-gray-600 font-bold">vs</span>
 
-                    <input
-                      type="number"
-                      min="0"
-                      className="w-14 p-2 text-center border rounded-xl"
-                      value={predictions[m.id]?.score_team2 || ""}
-                      onChange={(e) =>
-                        updateScore(m.id, "score_team2", e.target.value)
-                      }
-                    />
-                  </div>
+                          <div className="text-lg font-semibold text-gray-900">
+                            {m.team2}
+                          </div>
+                          <div className="text-3xl">{flag2}</div>
+                        </div>
 
-                  {/* Opslaan */}
-                  <button
-                    onClick={() => savePrediction(m.id)}
-                    className="px-5 py-2 bg-wkgreen text-white font-bold rounded-xl shadow hover:bg-green-700 active:scale-95 transition"
-                  >
-                    Opslaan
-                  </button>
+                        {/* Datum & tijd */}
+                        <p className="text-sm text-gray-700 font-medium">
+                          {m.datum} — {m.tijd.slice(0, 5)}
+                        </p>
+
+                        {/* Locatie */}
+                        <p className="text-sm text-gray-500 mt-1">
+                          🏟️ {m.locatie}
+                        </p>
+
+                        {/* Score inputs */}
+                        <div className="flex justify-center items-center gap-3 mt-4">
+                          <input
+                            type="number"
+                            min="0"
+                            className="w-12 p-1 text-center border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                            value={predictions[m.id]?.score_team1 || ""}
+                            onChange={(e) =>
+                              updateScore(m.id, "score_team1", e.target.value)
+                            }
+                          />
+
+                          <span className="font-bold text-gray-700">-</span>
+
+                          <input
+                            type="number"
+                            min="0"
+                            className="w-12 p-1 text-center border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                            value={predictions[m.id]?.score_team2 || ""}
+                            onChange={(e) =>
+                              updateScore(m.id, "score_team2", e.target.value)
+                            }
+                          />
+                        </div>
+
+                        {/* Opslaan button */}
+                        <button
+                          onClick={() => savePrediction(m.id)}
+                          className="mt-4 px-5 py-2 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700 active:scale-95 transition"
+                        >
+                          Opslaan
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          </div>
-        ))}
+              </div>
+            ))}
+      </div>
     </div>
   );
 }
