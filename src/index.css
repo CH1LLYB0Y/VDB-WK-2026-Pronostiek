@@ -456,3 +456,42 @@ body {
 .text-center { text-align: center; }
 .mb-2 { margin-bottom: 8px; }
 .p-2 { padding: 8px; }
+
+/* --------------------------------------------------------
+   GROUP / ACCORDION
+-------------------------------------------------------- */
+
+.pronostiek-wrapper {
+  max-width: 700px;
+  margin: 0 auto;          /* <--- CENTREERT ALLES */
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.group-block {
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.group-header {
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--wk-blue);
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+}
+
+.group-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
